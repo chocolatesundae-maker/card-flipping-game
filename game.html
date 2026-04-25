@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flip. Match. Remember.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus+Jakarta+Sans', sans-serif;
+            background-color: #0f0a2e;
+            background-image: radial-gradient(at 10% 90%, #201755 0px, transparent 50%), radial-gradient(at 90% 10%, #1a1040 0px, transparent 50%);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .text-gradient {
+            background: linear-gradient(to right, #ff8a4c, #b088f9, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .text-flip-gradient {
+            background: linear-gradient(135deg, #ff8a4c 0%, #ff40b4 40%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card-border {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.3s;
+        }
+
+        .orange-btn {
+            background-color: #ff9d1c;
+            transition: all 0.2s;
+            color: #0f0a2e;
+            font-weight: 800;
+        }
+
+            .orange-btn:hover {
+                background-color: #e68a00;
+                transform: translateY(-2px);
+                box-shadow: 0 8px 24px rgba(255, 157, 28, 0.3);
+            }
+
+        /* Title Screen Specifics */
+        .glass-badge {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(4px);
+        }
+
+        .gradient-icon-box {
+            background: linear-gradient(135deg, #ff9f8a 0%, #ff6bac 100%);
+            box-shadow: 0 8px 32px rgba(255, 107, 172, 0.3);
+        }
+
+        /* Game Card Styles */
+        .memory-card {
+            aspect-ratio: 1/1;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s;
+            transform-style: preserve-3d;
+        }
+
+        .memory-card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, #ff8a4c, #ff40b4);
+            font-weight: bold;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .card-front {
+            background: #1e1b4b;
+            border: 2px solid #ff40b4;
+            transform: rotateY(180deg);
+            font-size: 2rem;
+        }
+
+        .modal-overlay {
+            background: rgba(15, 10, 46, 0.95);
+            backdrop-filter: blur(8px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div id="title-screen" class="flex flex-col items-center text-center">
+        <div class="relative flex flex-col items-center mb-10">
+            <div class="absolute -right-16 -top-10 w-16 h-16 rounded-3xl gradient-icon-box flex items-center justify-center rotate-6">
+                <i data-lucide="brain" class="w-9 h-9 text-[#0f0a2e]"></i>
+            </div>
+            <div class="glass-badge flex items-center gap-2.5 px-5 py-2.5 rounded-full text-[#ff9d1c] text-sm font-semibold mb-12">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                A Memory Challenge
+            </div>
+        </div>
+
+        <h1 class="text-6xl md:text-8xl font-extrabold tracking-tighter mb-8">
+            <span class="text-white">Memory</span>
+            <span class="text-flip-gradient">Flip</span>
+        </h1>
+
+        <div class="text-gray-400 text-lg md:text-xl max-w-xl leading-relaxed mb-16">
+            <p>Flip the cards, memorize the characters, and pair them all up.</p>
+            <p>Train your brain, one match at a time.</p>
+        </div>
+
+        <button onclick="showMenu()" class="orange-btn text-lg px-12 py-4 rounded-3xl flex items-center gap-3 mb-16 group">
+            <i data-lucide="play-circle" class="w-6 h-6"></i>
+            Start Game
+        </button>
+
+        <div class="text-gray-600 text-sm">
+            Three difficulties await: Easy, Medium, and Hard. ✨
+        </div>
+    </div>
+
+    <div id="menu-container" class="hidden w-full flex flex-col items-center py-10">
+        <div class="flex items-center gap-2 px-4 py-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 text-sm font-medium mb-8">
+            <i data-lucide="zap" class="w-4 h-4"></i> Choose Your Level
+        </div>
+        <div class="text-center mb-12">
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-2">Select</h1>
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-gradient mb-6">Difficulty</h1>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
+            <div class="card-border p-8 rounded-[2rem] flex flex-col">
+                <div class="w-12 h-12 rounded-full bg-teal-900/30 flex items-center justify-center text-teal-400 mb-6"><i data-lucide="zap"></i></div>
+                <h2 class="text-2xl font-bold mb-1">Easy</h2>
+                <p class="text-orange-400 text-3xl font-extrabold mb-2">10 <span class="text-gray-400 text-base font-semibold">cards</span></p>
+                <p class="text-gray-400 text-sm mb-8">15 Seconds Limit</p>
+                <button onclick="startGame('easy')" class="orange-btn w-full py-3 rounded-xl">Play Easy</button>
+            </div>
+            <div class="card-border p-8 rounded-[2rem] flex flex-col">
+                <div class="w-12 h-12 rounded-full bg-blue-900/30 flex items-center justify-center text-blue-400 mb-6"><i data-lucide="brain"></i></div>
+                <h2 class="text-2xl font-bold mb-1">Medium</h2>
+                <p class="text-orange-400 text-3xl font-extrabold mb-2">20 <span class="text-gray-400 text-base font-semibold">cards</span></p>
+                <p class="text-gray-400 text-sm mb-8">1 Minute Limit</p>
+                <button onclick="startGame('medium')" class="orange-btn w-full py-3 rounded-xl">Play Medium</button>
+            </div>
+            <div class="card-border p-8 rounded-[2rem] flex flex-col">
+                <div class="w-12 h-12 rounded-full bg-purple-900/30 flex items-center justify-center text-purple-400 mb-6"><i data-lucide="flame"></i></div>
+                <h2 class="text-2xl font-bold mb-1">Hard</h2>
+                <p class="text-orange-400 text-3xl font-extrabold mb-2">40 <span class="text-gray-400 text-base font-semibold">cards</span></p>
+                <p class="text-gray-400 text-sm mb-8">2 Minutes Limit</p>
+                <button onclick="startGame('hard')" class="orange-btn w-full py-3 rounded-xl">Play Hard</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-container" class="hidden w-full max-w-5xl">
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="confirmExit()" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition">
+                <i data-lucide="menu" class="w-4 h-4"></i> Menu
+            </button>
+            <div class="text-center">
+                <p id="timer" class="text-4xl font-black text-orange-400">00:00</p>
+                <p id="difficulty-label" class="text-[10px] uppercase tracking-widest text-gray-400">Mode</p>
+            </div>
+            <div class="text-right">
+                <p class="text-gray-400 text-xs uppercase">Pairs</p>
+                <p id="score" class="text-xl font-bold">0 / 0</p>
+            </div>
+        </div>
+        <div id="card-grid" class="grid gap-2 md:gap-3"></div>
+    </div>
+
+    <div id="confirm-modal" class="modal-overlay fixed inset-0 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-[#1e1b4b] border border-white/10 p-8 rounded-[2rem] max-w-sm w-full text-center">
+            <h2 class="text-2xl font-bold mb-4">Exit Game?</h2>
+            <p class="text-gray-400 mb-8">Your current progress will be lost.</p>
+            <div class="flex gap-3">
+                <button onclick="closeModal('confirm-modal')" class="flex-1 bg-white/10 py-3 rounded-xl font-bold">Stay</button>
+                <button onclick="forceExit()" class="flex-1 bg-red-500 py-3 rounded-xl font-bold">Exit</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="status-modal" class="modal-overlay fixed inset-0 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-[#1e1b4b] border border-white/10 p-8 rounded-[2rem] max-w-sm w-full text-center">
+            <h2 id="status-title" class="text-3xl font-black mb-2">Result</h2>
+            <p id="status-msg" class="text-gray-400 mb-8">Message here.</p>
+            <div class="flex flex-col gap-3">
+                <button id="retry-btn" class="orange-btn py-3 rounded-xl">Try Again</button>
+                <button onclick="forceExit()" class="bg-white/10 py-3 rounded-xl font-bold">Back to Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        let timerInterval, timeLeft, flippedCards = [], matchedPairs = 0, isPaused = false, currentDifficulty = '';
+        const allIcons = ['🍎', '🚀', '⭐', '🐱', '🌈', '💎', '👻', '🍀', '🔥', '🍕', '🎸', '🎈', '🌍', '🎨', '⚡', '👾', '🦄', '🥥', '🍦', '🍭'];
+
+        const configs = {
+            easy: { cards: 10, time: 15, cols: 'grid-cols-2 sm:grid-cols-5' },
+            medium: { cards: 20, time: 60, cols: 'grid-cols-4 sm:grid-cols-5' },
+            hard: { cards: 40, time: 120, cols: 'grid-cols-4 sm:grid-cols-5 md:grid-cols-8' }
+        };
+
+        function showMenu() {
+            document.getElementById('title-screen').classList.add('hidden');
+            document.getElementById('menu-container').classList.remove('hidden');
+        }
+
+        function startGame(mode) {
+            currentDifficulty = mode || currentDifficulty;
+            const config = configs[currentDifficulty];
+
+            closeModal('status-modal');
+            document.getElementById('menu-container').classList.add('hidden');
+            document.getElementById('game-container').classList.remove('hidden');
+            document.getElementById('difficulty-label').innerText = currentDifficulty + " mode";
+
+            isPaused = false;
+            timeLeft = config.time;
+            setupBoard(config);
+            startTimer();
+        }
+
+        function setupBoard(config) {
+            const grid = document.getElementById('card-grid');
+            grid.className = `grid gap-2 md:gap-3 ${config.cols}`;
+            grid.innerHTML = '';
+            matchedPairs = 0;
+            const pairCount = config.cards / 2;
+            document.getElementById('score').innerText = `0 / ${pairCount}`;
+
+            const selectedIcons = allIcons.slice(0, pairCount);
+            const gameCards = [...selectedIcons, ...selectedIcons].sort(() => Math.random() - 0.5);
+
+            gameCards.forEach(icon => {
+                const card = document.createElement('div');
+                card.className = 'memory-card';
+                card.dataset.icon = icon;
+                card.innerHTML = `<div class="card-inner"><div class="card-back text-lg md:text-2xl">?</div><div class="card-front text-xl md:text-3xl">${icon}</div></div>`;
+                card.addEventListener('click', flipCard);
+                grid.appendChild(card);
+            });
+        }
+
+        function flipCard() {
+            if (isPaused || flippedCards.length >= 2 || this.classList.contains('flipped')) return;
+            this.classList.add('flipped');
+            flippedCards.push(this);
+            if (flippedCards.length === 2) checkMatch();
+        }
+
+        function checkMatch() {
+            const [c1, c2] = flippedCards;
+            const totalPairs = configs[currentDifficulty].cards / 2;
+            if (c1.dataset.icon === c2.dataset.icon) {
+                matchedPairs++;
+                document.getElementById('score').innerText = `${matchedPairs} / ${totalPairs}`;
+                flippedCards = [];
+                if (matchedPairs === totalPairs) showStatus(true);
+            } else {
+                setTimeout(() => {
+                    c1.classList.remove('flipped');
+                    c2.classList.remove('flipped');
+                    flippedCards = [];
+                }, 700);
+            }
+        }
+
+        function startTimer() {
+            updateTimerDisplay();
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!isPaused) {
+                    timeLeft--;
+                    updateTimerDisplay();
+                    if (timeLeft <= 0) showStatus(false);
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timeLeft / 60);
+            const s = timeLeft % 60;
+            document.getElementById('timer').innerText = `${m}:${s < 10 ? '0' + s : s}`;
+        }
+
+        function showStatus(win) {
+            clearInterval(timerInterval);
+            isPaused = true;
+            const modal = document.getElementById('status-modal');
+            document.getElementById('status-title').innerText = win ? "Victory! 🏆" : "Try Again! ⏰";
+            document.getElementById('status-msg').innerText = win ? "You've mastered your memory!" : "Time ran out. Want another shot?";
+            document.getElementById('retry-btn').onclick = () => startGame(currentDifficulty);
+            modal.classList.remove('hidden');
+        }
+
+        function confirmExit() { isPaused = true; document.getElementById('confirm-modal').classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); isPaused = false; }
+
+        function forceExit() {
+            clearInterval(timerInterval);
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+            document.getElementById('game-container').classList.add('hidden');
+            document.getElementById('menu-container').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
